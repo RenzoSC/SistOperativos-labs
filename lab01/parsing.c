@@ -74,15 +74,6 @@ pipeline parse_pipeline(Parser p) {
             error = (cmd==NULL);
         }
     }
-<<<<<<< Updated upstream
-    /* Opcionalmente un OP_BACKGROUND al final */
-    /*
-     *
-     * COMPLETAR
-     *
-     */
-=======
->>>>>>> Stashed changes
 
     if (error) {
         /*bool garbage = false;

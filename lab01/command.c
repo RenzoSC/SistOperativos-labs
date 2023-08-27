@@ -21,11 +21,7 @@ scommand scommand_new(void){
 }
 
 scommand scommand_destroy(scommand self){
-<<<<<<< Updated upstream
-    g_list_free (self->cmdargs);
-=======
     g_list_free_full(self->cmdargs, (GDestroyNotify)*free);
->>>>>>> Stashed changes
     self->redout = NULL;
     self->redin = NULL;
     free(self);
@@ -38,16 +34,6 @@ bool scommand_is_empty(const scommand self){
 }
 
 void scommand_push_back(scommand self, char * argument){
-<<<<<<< Updated upstream
-    self->cmdargs = g_list_prepend(self->cmdargs, argument);
-    return self;
-}
-
-void scommand_pop_front(scommand self){
-    Glist * last = g_list_last(self->cmdargs);
-    self->cmdargs = g_list_remove_link(self->cmdargs, last);
-    return self;
-=======
     self->cmdargs = g_list_append(self->cmdargs, argument);
 }
 
@@ -137,5 +123,4 @@ bool pipeline_get_wait(const pipeline self){
 char * pipeline_to_string(const pipeline self){
     /* Lo termino dsp xddd */
     return NULL;
->>>>>>> Stashed changes
 }
