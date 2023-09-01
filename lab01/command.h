@@ -149,7 +149,7 @@ char * scommand_to_string(const scommand self);
  *  front -> | scmd1 | scmd2 | ... | scmdn | <-back
  *           ------------------------------
  */
- 
+
 typedef struct pipeline_s * pipeline;
 
 pipeline pipeline_new(void);
