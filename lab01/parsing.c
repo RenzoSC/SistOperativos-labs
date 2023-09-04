@@ -14,7 +14,7 @@ static scommand parse_scommand(Parser p) {
     bool startbackground = false;                        
 
                                             //Para ver que al comienzo de un comando simple no haya      
-    parser_op_pipe(p, &startpipe);    //ni "|" ni "&"(si tenemos algo valido | otro valido y estamos parseando
+    parser_op_pipe(p, &startpipe);          //ni "|" ni "&"(si tenemos algo valido | otro valido y estamos parseando
                                             //"otro valido" no va a tomar a "|" al principio pues en la funcion
                                             //parse_pipeline se analiza esto antes de entrar a parse_scommand).
     if(startpipe) {
@@ -110,13 +110,12 @@ pipeline parse_pipeline(Parser p) {
                                       /* Consumir todo lo que hay inclusive el \n */
     if (garbage) {
         char *garbge = parser_last_garbage(p);
-        if (*garbge=='&') {
-            printf("Error de sintaxis con respecto al operador &\n");
-            result = pipeline_destroy(result);
-        }
+        printf("Error de sintaxis con respecto al operador & %s\n", garbge);
+        result = pipeline_destroy(result);
     }
 
     return result;
 }
+
 
 
