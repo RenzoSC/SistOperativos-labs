@@ -9,31 +9,23 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <fcntl.h>
-
-//FUNC PARA OBTENER REDIRECCIONES DE ENTRADA Y SALIDA
-static bool scommand_redirects(scommand scmd){
-    char *redir_in = scommand_get_redir_in (scmd); //redireccion in
-    char *redir_out = scommand_get_redir_out (scmd); //redireccion out
+#include <sys/stat.h>
+#define FDREAD 0
+#define FDWRITE 1
     
-    //si hay redireccion de entrada entonces:
-    if(redir_in != NULL);{
-        int rd_in = open(redir_in);//abre el archivo en modo lectura
-        if(rd_in == -1){  //retorna true si ocurrio un error
-            printf("Hubo un error abriendo la redireccion de entrada %s\n",redir_in);
-            return true;
-        } 
-        //FALTA SEGUIR, toy cansada , ESTA DEJAMELA A MI QUE PARECE FACIL XD
-
-    }
-}
-
-
-void simple_exec(scommand command){
+static void simple_exec(scommand command){
     assert(command != NULL);
-    unsigned int lenc = scommand_length(command);
+    const unsigned int lenc = scommand_length(command);
     char * redout= scommand_get_redir_out(command);
     char * redin = scommand_get_redir_in(command);
-
+    
+    char * myargs[257];
+    for (unsigned int i = 0; i < lenc; i++)
+    {
+        myargs[i] = strdup(scommand_front(command));
+        scommand_pop_front(command);
+    }
+    myargs[lenc] = NULL;
     int rc = fork();
     if (rc < 0)
     {
@@ -63,14 +55,6 @@ void simple_exec(scommand command){
                 exit(1);
             }
         }
-        
-        char * myargs[lenc+1u];
-        for (int i = 0; i < lenc; i++)
-        {
-            myargs[i] = strdup(scommand_front(command));
-            scommand_pop_front(command);
-        }
-        myargs[lenc] = NULL;
         execvp(myargs[0], myargs);
         
         perror("execvp");
@@ -80,18 +64,46 @@ void simple_exec(scommand command){
     }
 }
 
-void exec_scommands(pipeline pipe, unsigned int pipelen){
-    if(pipelen == 1){
-        simple_exec(pipeline_front(pipe));
+static void exec_scommands(pipeline apipe, unsigned int pipelen){
+    if(pipelen==1){
+        simple_exec(pipeline_front(apipe));
+        pipeline_pop_front(apipe);
     }else{
-        
+        int fd[2];
+        int rc;
+        pipe(fd);
+        scommand cmd1 = pipeline_front(apipe);
+        pipeline_pop_front(apipe);
+
+        rc = fork();
+        scommand cmd2 = pipeline_front(apipe);
+        pipeline_pop_front(apipe);
+        if (rc<0)
+        {
+            perror("Fork");
+            exit(EXIT_SUCCESS);
+        }else if (rc ==0)
+        {
+            
+            close(fd[FDREAD]);
+            dup2(fd[FDWRITE], STDOUT_FILENO);
+            close(fd[FDWRITE]);
+
+            simple_exec(cmd1);
+        }else{
+            wait(NULL);
+            close(fd[FDWRITE]);
+            dup2(fd[FDREAD], STDIN_FILENO);
+            close(fd[FDREAD]);
+
+            simple_exec(cmd2);
+        }
     }
 }
 
 void execute_pipeline(pipeline apipe){
-   assert(apipe != NULL);
    unsigned int pipelen = pipeline_length(apipe);
-   if (pipeline_is_empty(apipe))                    //Caso en el que no hay comandos
+   if (apipe == NULL || pipeline_is_empty(apipe))                    //Caso en el que no hay comandos
    {
     exit(EXIT_SUCCESS);
    }else if (builtin_alone(apipe))                  //Caso en el que es un único comando interno (cd,help,exit)
@@ -108,8 +120,10 @@ void execute_pipeline(pipeline apipe){
             if (pid <0)
             {
                 perror("Fork");
+                exit(EXIT_SUCCESS);
             }else if (pid == 0){
                 //Proceso hijo
+                exec_scommands(apipe, pipelen);
             }else{
                 //Proceso padre
                 wait(NULL);

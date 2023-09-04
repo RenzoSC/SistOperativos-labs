@@ -41,7 +41,6 @@ bool builtin_alone(pipeline p){
 void builtin_run(scommand cmd){
     assert(builtin_is_internal(cmd)); //se fija que el comando sea interno
 
-    char *command_name = scommand_front(cmd); //obtiene el nombre del comando
 
     if (is_help(cmd)){
         //Si el comando es "help" muestra info sobre los integrantes del grupo
