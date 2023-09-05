@@ -41,6 +41,9 @@ static void simple_exec(scommand command){
             {
                 perror("Open");
                 exit(1);
+            }else{
+                dup2(input_fd, STDIN_FILENO);
+                close(input_fd);
             }
             assert(input_fd == STDIN_FILENO);
         }
@@ -53,6 +56,9 @@ static void simple_exec(scommand command){
             {
                 perror("Open");
                 exit(1);
+            }else{
+                dup2(output_fd, STDOUT_FILENO);
+                close(output_fd);
             }
         }
         execvp(myargs[0], myargs);
@@ -91,19 +97,26 @@ static void exec_scommands(pipeline apipe, unsigned int pipelen){
 
             simple_exec(cmd1);
         }else{
-            wait(NULL);
-            close(fd[FDWRITE]);
-            dup2(fd[FDREAD], STDIN_FILENO);
-            close(fd[FDREAD]);
-
-            simple_exec(cmd2);
+            int rc2 = fork();
+            if(rc2<0){
+                perror("Fork");
+                exit(EXIT_SUCCESS);
+            }else if(rc2==0){
+                close(fd[FDWRITE]);
+                dup2(fd[FDREAD], STDIN_FILENO);
+                close(fd[FDREAD]);
+                simple_exec(cmd2);
+            }else{
+                wait(NULL);
+                wait(NULL);
+            }   
         }
     }
 }
 
 void execute_pipeline(pipeline apipe){
    unsigned int pipelen = pipeline_length(apipe);
-   if (apipe == NULL || pipeline_is_empty(apipe))                    //Caso en el que no hay comandos
+   if (pipeline_is_empty(apipe))                    //Caso en el que no hay comandos
    {
     exit(EXIT_SUCCESS);
    }else if (builtin_alone(apipe))                  //Caso en el que es un único comando interno (cd,help,exit)
@@ -114,7 +127,8 @@ void execute_pipeline(pipeline apipe){
         bool pipe_wait = pipeline_get_wait(apipe);
         if (pipe_wait)                              //Se corre en primer plano
         {
-            exec_scommands(apipe, pipelen);        //deberia correr el programa xd                       
+            exec_scommands(apipe, pipelen);        //deberia correr el programa xd
+            pipeline_destroy(apipe);                       
         }else{
             pid_t pid = fork();
             if (pid <0)
@@ -124,6 +138,7 @@ void execute_pipeline(pipeline apipe){
             }else if (pid == 0){
                 //Proceso hijo
                 exec_scommands(apipe, pipelen);
+                pipeline_destroy(apipe);
             }else{
                 //Proceso padre
                 wait(NULL);
