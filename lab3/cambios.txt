@@ -1,0 +1,9 @@
+Renzo:
+
+procinit    --> proc counter
+scheduler   --> agrego aumento de proc counter
+freeproc    --> proc counter
+allocproc   --> proc counter
+fork        --> proc counter
+
+pstat       --> started function

@@ -54,6 +54,9 @@ procinit(void)
   for(p = proc; p < &proc[NPROC]; p++) {
       initlock(&p->lock, "proc");
       p->state = UNUSED;
+
+      p->select_counter = 0;                //en la tabla de procesos pongo los selec en 0
+      p->last_exec = 0;
       p->kstack = KSTACK((int) (p - proc));
   }
 }
@@ -124,7 +127,8 @@ allocproc(void)
 found:
   p->pid = allocpid();
   p->state = USED;
-
+  p->select_counter = 0;
+  p->last_exec = 0;
   // Allocate a trapframe page.
   if((p->trapframe = (struct trapframe *)kalloc()) == 0){
     freeproc(p);
@@ -169,6 +173,9 @@ freeproc(struct proc *p)
   p->killed = 0;
   p->xstate = 0;
   p->state = UNUSED;
+
+  p->select_counter = 0;
+  p->last_exec = 0;
 }
 
 // Create a user page table for a given process, with no user memory,
@@ -320,6 +327,9 @@ fork(void)
 
   acquire(&np->lock);
   np->state = RUNNABLE;
+
+  np->select_counter =0;          //new proces select 0
+  np->last_exec = 0;
   release(&np->lock);
 
   return pid;
@@ -459,6 +469,12 @@ scheduler(void)
         // to release its lock and then reacquire it
         // before jumping back to us.
         p->state = RUNNING;
+
+        p->select_counter +=1;
+
+        acquire(&tickslock);
+        p->last_exec = ticks;
+        release(&tickslock);
         c->proc = p;
         swtch(&c->context, &p->context);
 
@@ -677,7 +693,18 @@ procdump(void)
       state = states[p->state];
     else
       state = "???";
-    printf("%d %s %s", p->pid, state, p->name);
+    printf("%d %s %d %s", p->pid, state, p->select_counter, p->name);
     printf("\n");
   }
+}
+
+int pstat(int pid){
+    struct proc *p;
+    for(p = proc; p < &proc[NPROC]; p++){
+      if(p->pid == pid)break;  
+    }
+    printf("\nCantidad de veces seleccionado: %d\n", p->select_counter);
+    printf("Prioridad: %d\n", p->state);
+    printf("Ultima vez ejecutado: %d\n", p->last_exec);
+    return 0;
 }

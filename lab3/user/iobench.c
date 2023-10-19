@@ -35,6 +35,7 @@ main(int argc, char *argv[])
 
   uint64 start = time();
   int opsw = 0,opsr = 0;
+  uint64 total_ops=0;
 
   uint64 startglobal = time();
   uint64 endglobal = time();
@@ -63,10 +64,12 @@ main(int argc, char *argv[])
     opsr += 2 * TIMES;
 
     if (elapsed >= MINTICKS) {
-        printf("\t\t\t\t\t%d: %d OPW%dT\n", pid, (int) (opsw * MINTICKS / elapsed), MINTICKS);
-        printf("\t\t\t\t\t%d: %d OPR%dT\n", pid, (int) (opsr * MINTICKS / elapsed), MINTICKS);
+        printf("\t\t\t\t\t%d: %d OPW%dT, %d OPR%dT\n", pid
+                      , (int) (opsw * MINTICKS / elapsed), MINTICKS
+                      , (int) (opsr * MINTICKS / elapsed), MINTICKS);
   
         start = end;
+        total_ops+=opsr+opsw;
         opsw = 0;
         opsr = 0;
         
@@ -77,7 +80,9 @@ main(int argc, char *argv[])
 
 
   }
+  printf("Termino iobench %d: total ops %lu -->\t",pid, total_ops);
   pstat(pid);
   exit(0);
+  return 0;
 }
 

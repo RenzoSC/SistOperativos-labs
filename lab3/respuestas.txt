@@ -26,11 +26,67 @@ por medios “normales”.
 
     //está mal (me parece)
 
+    swtch:
+        sd ra, 0(a0)
+        sd sp, 8(a0)
+        sd s0, 16(a0)
+        sd s1, 24(a0)
+        sd s2, 32(a0)
+        sd s3, 40(a0)
+        sd s4, 48(a0)
+        sd s5, 56(a0)
+        sd s6, 64(a0)
+        sd s7, 72(a0)
+        sd s8, 80(a0)
+        sd s9, 88(a0)
+        sd s10, 96(a0)
+        sd s11, 104(a0)
+
+        ld ra, 0(a1)
+        ld sp, 8(a1)
+        ld s0, 16(a1)
+        ld s1, 24(a1)
+        ld s2, 32(a1)
+        ld s3, 40(a1)
+        ld s4, 48(a1)
+        ld s5, 56(a1)
+        ld s6, 64(a1)
+        ld s7, 72(a1)
+        ld s8, 80(a1)
+        ld s9, 88(a1)
+        ld s10, 96(a1)
+        ld s11, 104(a1)
+        
+        ret
+
+        si queremos tener de cierta forma alguna medicion cuanto tarda el cambio de contexto deberiamos
+        calcular cuanto tiempo tarda la cantidad de operaciones que realiza internamente.
+        suponiendo que la operacion sd dura entre 1 y 10 ns , y ld entre 10 y 50 ns , tomando un promedio de 
+        las 2 se podria llegar a que el cambio de contexto puede durar : (5.5ns + 30ns) * 13 = 461,5 ns 
+        obviamente esto es una estimacion muy general ya que el c.c depende de varios factores. :) 
+
+
+
+
+
+
 4- ¿El cambio de contexto consume tiempo de un quantum?
+
+    El cambio de contexto se realiza en swtch.S, bajo la funcion del mismo nombre, donde se guardan los registros del old context 
+    (El del proceso que dejo la CPU) y se cargan los del new context (nuevo proceso que se carga en la CPU). 
+    La cantidad de instrucciones ejecutadas por el procesador (guardado y cargado del estado de los procesos) son 28, lo cual implica 
+    un consumo, aunque ínfimo, de tiempo en la realización del context switch.
+    Finalmente, el cambio de contexto sí consume tiempo de un quantum ya que este es asignado como interrupción de forma global al 
+    SO y no a un proceso en particular. 
+
+
 
 5- ¿Hay alguna forma de que a un proceso se le asigne menos tiempo? Pista:
 Se puede empezar a buscar desde la system call uptime.
 
+el quantum es asignado mediante un timer interrupt al Sistema Operativo de forma global, no de forma particular a cada proceso.
+Motivo de esto, puede suceder que un proceso termine antes de la finalización del quantum, por lo que el siguiente elegido por el scheduler
+va a tener un tiempo menor asignado (el faltante) ya que comienza con el tiempo ya transcurrido.
 
 
 6- ¿Cúales son los estados en los que un proceso pueden permanecer en xv6-

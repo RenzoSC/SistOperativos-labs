@@ -56,7 +56,8 @@ main(int argc, char *argv[])
   uint64 endglobal = time();
   uint64 elapsedglobal = endglobal - startglobal;
  
-  long ops = 0;
+  uint64 ops = 0;
+  uint64 total_ops = 0;
   while(elapsedglobal< 2000) {
     uint64 end = time();
     uint64 elapsed = end - start;
@@ -65,6 +66,7 @@ main(int argc, char *argv[])
         printf("%d: %d MFLOP%dT\n", pid, measurement, MINTICKS);
 
         start = end;
+        total_ops+=ops;
         ops = 0;
     }
 
@@ -78,7 +80,7 @@ main(int argc, char *argv[])
 
   }
 
+  printf("Termino cpubench %d: total ops %lu --> ",pid, total_ops);
   pstat(pid);
-  exit(0);
+  return 0;
 }
-
