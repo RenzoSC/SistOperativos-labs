@@ -93,7 +93,9 @@ struct proc {
   int pid;                     // Process ID
   
   int select_counter;          // Counts how many times this proc was selected by sched
-  int last_exec;
+  int last_exec;               // Last execute of the process
+  int prio;
+
   // wait_lock must be held when using this:
   struct proc *parent;         // Parent process
 

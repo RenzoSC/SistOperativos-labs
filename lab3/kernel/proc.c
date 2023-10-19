@@ -57,6 +57,8 @@ procinit(void)
 
       p->select_counter = 0;                //en la tabla de procesos pongo los selec en 0
       p->last_exec = 0;
+      p->prio = NPRIO -1;                   //initialized prio (max prio -- rule 3)
+
       p->kstack = KSTACK((int) (p - proc));
   }
 }
@@ -127,8 +129,11 @@ allocproc(void)
 found:
   p->pid = allocpid();
   p->state = USED;
+
   p->select_counter = 0;
   p->last_exec = 0;
+  p->prio = NPRIO -1;
+
   // Allocate a trapframe page.
   if((p->trapframe = (struct trapframe *)kalloc()) == 0){
     freeproc(p);
@@ -176,6 +181,7 @@ freeproc(struct proc *p)
 
   p->select_counter = 0;
   p->last_exec = 0;
+  p->prio = NPRIO -1;
 }
 
 // Create a user page table for a given process, with no user memory,
@@ -330,6 +336,7 @@ fork(void)
 
   np->select_counter =0;          //new proces select 0
   np->last_exec = 0;
+  np->prio = NPRIO-1;
   release(&np->lock);
 
   return pid;
@@ -471,16 +478,23 @@ scheduler(void)
         p->state = RUNNING;
 
         p->select_counter +=1;
+        
 
-        acquire(&tickslock);
-        p->last_exec = ticks;
-        release(&tickslock);
         c->proc = p;
         swtch(&c->context, &p->context);
-
+        
         // Process is done running for now.
         // It should have changed its p->state before coming back.
         c->proc = 0;
+        
+        acquire(&tickslock);
+        p->last_exec = ticks;           //Esto nos dice la ultima vez q fue ejecutado una vez terminó de correr el proceso
+        release(&tickslock);
+
+        if (p->prio >0)
+        {
+          p->prio -=1;                  //A su vez cuando terminó de ejecutarse es pq terminó el quantum entonces se le resta 1 al prio
+        }
       }
       release(&p->lock);
     }
@@ -566,6 +580,8 @@ sleep(void *chan, struct spinlock *lk)
   // Go to sleep.
   p->chan = chan;
   p->state = SLEEPING;
+
+  p->prio +=1;          //Casi seguro de que acá es donde se bloquea por ende acá se tiene que sumar 1 al prio        
 
   sched();
 
@@ -693,7 +709,11 @@ procdump(void)
       state = states[p->state];
     else
       state = "???";
-    printf("%d %s %d %s", p->pid, state, p->select_counter, p->name);
+
+    printf("pid state prio select_counter name\n");
+
+    printf("%d %s %d %d %s", p->pid, state, p->prio,p->select_counter, p->name);
+    
     printf("\n");
   }
 }
@@ -704,7 +724,7 @@ int pstat(int pid){
       if(p->pid == pid)break;  
     }
     printf("\nCantidad de veces seleccionado: %d\n", p->select_counter);
-    printf("Prioridad: %d\n", p->state);
+    printf("Prioridad: %d\n", p->prio);
     printf("Ultima vez ejecutado: %d\n", p->last_exec);
     return 0;
 }

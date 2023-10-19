@@ -7,3 +7,10 @@ allocproc   --> proc counter
 fork        --> proc counter
 
 pstat       --> started function
+
+p->prio +=1 en sleep ----> está bien en sleep? el estado sleep es donde se produce el bloqueo no?
+
+p->prio -=1 debería ponerlo en sched? o en scheduler? me parece que es en sched....
+pero se tiene en cuenta que sched se puede llamar antes de que termine el quantum?
+
+xd está mal XD el cpubench se va a - inf dea
