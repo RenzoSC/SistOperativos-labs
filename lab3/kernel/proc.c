@@ -471,6 +471,9 @@ scheduler(void)
 
     for(p = proc; p < &proc[NPROC]; p++) {
       acquire(&p->lock);
+      if (p->state == SLEEPING && p->prio<2) {
+        p->prio +=1;
+      }
       if(p->state == RUNNABLE) {
         // Switch to chosen process.  It is the process's job
         // to release its lock and then reacquire it
@@ -490,11 +493,6 @@ scheduler(void)
         acquire(&tickslock);
         p->last_exec = ticks;           //Esto nos dice la ultima vez q fue ejecutado una vez terminó de correr el proceso
         release(&tickslock);
-
-        if (p->prio >0)
-        {
-          p->prio -=1;                  //A su vez cuando terminó de ejecutarse es pq terminó el quantum entonces se le resta 1 al prio
-        }
       }
       release(&p->lock);
     }
@@ -580,8 +578,10 @@ sleep(void *chan, struct spinlock *lk)
   // Go to sleep.
   p->chan = chan;
   p->state = SLEEPING;
-
-  p->prio +=1;          //Casi seguro de que acá es donde se bloquea por ende acá se tiene que sumar 1 al prio        
+  if (p->prio<2)
+  {
+    p->prio +=1;          //Casi seguro de que acá es donde se bloquea por ende acá se tiene que sumar 1 al prio
+  }        
 
   sched();
 

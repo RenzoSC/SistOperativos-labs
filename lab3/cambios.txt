@@ -14,3 +14,11 @@ p->prio -=1 debería ponerlo en sched? o en scheduler? me parece que es en sched
 pero se tiene en cuenta que sched se puede llamar antes de que termine el quantum?
 
 xd está mal XD el cpubench se va a - inf dea
+
+mateo: 
+
+cambie esa parte del scheduler porque veia que cuando corria iobench &; iobench &; cpubench por ejemplo,
+uno se quedaba en dos y el otro en 1 para siempre, pero el estado cambiaba de sleep a rnable y veia
+que se modificaba (hasta cuando estaba en sleep) la cantidad de veces que se elegia para correr,
+entonces era como que ¿entraba en el scheduler? pero no pasaba nada, supongo que porque no estaba
+en runnable. 
