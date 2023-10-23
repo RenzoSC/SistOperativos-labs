@@ -10,6 +10,8 @@ struct cpu cpus[NCPU];
 
 struct proc proc[NPROC];
 
+struct proc *prio[NPROC];
+
 struct proc *initproc;
 
 int nextpid = 1;
@@ -26,9 +28,68 @@ extern char trampoline[]; // trampoline.S
 // must be acquired before any p->lock.
 struct spinlock wait_lock;
 
+/*
+This functions helps us to find the order between two procs
+1->  a goes before b
+0->  b goes before a
+The order is in first instance determined by prio
+
+prio A > prio B
+
+if prio A == prio B
+  the order is determined by select counter
+  select counter A < select counter B
+*/
+int goes_before(struct proc *a, struct proc *b){
+  if (a->prio > b->prio)
+  {
+    return 1;
+  }else if (b->prio > a->prio)
+  {
+    return 0;
+  }else if (a->prio == b->prio && (a->select_counter > b->select_counter))
+  {
+    return 0;
+  }else if (a->prio == b->prio && (a->select_counter < b->select_counter))
+  {
+    return 1;
+  }else
+  {
+    return 1;
+  }
+}
+
+/*
+auxiliar function to swap the place of two elements in an array
+*/
+
+void swap(struct proc *a[], int i, int j){
+  struct proc *b = a[i];
+  a[i] = a[j];
+  a[j] =b;
+}
+static void insert(struct proc *a[], unsigned int i) {
+    unsigned int j = i;
+    while (j >0 && goes_before(a[j], a[j-1]))
+    {
+        swap(a, j-1, j);
+        j--;
+    }   
+}
+
+/*
+Function to sort the elements of the array 
+*/
+void insertion_sort(struct proc *a[], unsigned int length) {
+    for (unsigned int i = 1u; i < length; ++i) {
+        insert(a, i);
+    }
+}
+
 // Allocate a page for each process's kernel stack.
 // Map it high in memory, followed by an invalid
 // guard page.
+
 void
 proc_mapstacks(pagetable_t kpgtbl)
 {
@@ -468,8 +529,16 @@ scheduler(void)
   for(;;){
     // Avoid deadlock by ensuring that devices can interrupt.
     intr_on();
-
-    for(p = proc; p < &proc[NPROC]; p++) {
+    
+    int i=0;
+    for (p = proc; p < &proc[NPROC]; p++)
+    {
+      prio[i] = p;
+      i++;
+    }
+    insertion_sort(prio, NPROC);
+    for(i = 0; i < NPROC; i++) {
+      struct proc *p = prio[i];
       acquire(&p->lock);
       if (p->state == SLEEPING && p->prio<2) {
         p->prio +=1;
@@ -493,6 +562,8 @@ scheduler(void)
         acquire(&tickslock);
         p->last_exec = ticks;           //Esto nos dice la ultima vez q fue ejecutado una vez terminó de correr el proceso
         release(&tickslock);
+        release(&p->lock);
+        break;
       }
       release(&p->lock);
     }
