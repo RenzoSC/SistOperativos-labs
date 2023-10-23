@@ -693,6 +693,7 @@ procdump(void)
       state = states[p->state];
     else
       state = "???";
+    printf("pid state select_counter name\n");
     printf("%d %s %d %s", p->pid, state, p->select_counter, p->name);
     printf("\n");
   }
@@ -704,7 +705,7 @@ int pstat(int pid){
       if(p->pid == pid)break;  
     }
     printf("\nCantidad de veces seleccionado: %d\n", p->select_counter);
-    printf("Prioridad: %d\n", p->state);
+    printf("Prioridad: 0\n");
     printf("Ultima vez ejecutado: %d\n", p->last_exec);
     return 0;
 }
