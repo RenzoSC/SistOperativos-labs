@@ -472,15 +472,16 @@ scheduler(void)
 
         p->select_counter +=1;
 
-        acquire(&tickslock);
-        p->last_exec = ticks;
-        release(&tickslock);
         c->proc = p;
         swtch(&c->context, &p->context);
 
         // Process is done running for now.
         // It should have changed its p->state before coming back.
         c->proc = 0;
+        
+        acquire(&tickslock);
+        p->last_exec = ticks;           //Esto nos dice la ultima vez q fue ejecutado una vez terminó de correr el proceso
+        release(&tickslock);
       }
       release(&p->lock);
     }
