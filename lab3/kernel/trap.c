@@ -80,7 +80,7 @@ usertrap(void)
   if(which_dev == 2){
     if (p->prio >0)
     {
-      p->prio -=1;               //acá es?xd
+      p->prio -=1;               //Here is where the quantum finishes
     }
     yield();
   }
@@ -156,10 +156,6 @@ kerneltrap()
   struct proc *p = myproc();
   // give up the CPU if this is a timer interrupt.
   if(which_dev == 2 && p != 0 && p->state == RUNNING){
-    if (p->prio >0)
-    {
-      p->prio -=1;               //acá es?xd
-    }
     yield();
   }
 

@@ -71,9 +71,9 @@ void swap(struct proc *a[], int i, int j){
 static void insert(struct proc *a[], unsigned int i) {
     unsigned int j = i;
     while (j >0 && goes_before(a[j], a[j-1]))
-    {
-        swap(a, j-1, j);
-        j--;
+    {   
+      swap(a, j-1, j);
+      j--;
     }   
 }
 
@@ -540,9 +540,6 @@ scheduler(void)
     for(i = 0; i < NPROC; i++) {
       struct proc *p = prio[i];
       acquire(&p->lock);
-      if (p->state == SLEEPING && p->prio<2) {
-        p->prio +=1;
-      }
       if(p->state == RUNNABLE) {
         // Switch to chosen process.  It is the process's job
         // to release its lock and then reacquire it
